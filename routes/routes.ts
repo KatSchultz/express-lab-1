@@ -10,18 +10,22 @@ itemRouter.get("/", (req, res) => {
     const queryItems = items.filter(
       (item) => item.price <= Number(queryParam.maxPrice)
     );
-    console.log(queryItems);
     res.json(queryItems);
+  } else if (queryParam.hasOwnProperty("prefix")) {
+    const prefix: string = String(queryParam.prefix);
+    const queryItems = items.filter((item) => item.product.startsWith(prefix));
+    res.status(200).json(queryItems);
+  } else if (queryParam.hasOwnProperty("pageSize")) {
+    const pageSize = Number(queryParam.pageSize);
+    const queryItems: Item[] = [];
+    for (let i = 0; i < pageSize; i++) {
+      queryItems.push(items[i]);
+    }
+    res.status(200).json(queryItems);
   } else {
-    console.log(req.query);
     res.status(200).json(items);
   }
 });
-
-// itemRouter.get("/", (req, res) => {
-//   const queryParam = req.query;
-//   res.json(queryParam);
-// });
 
 itemRouter.get("/:id", (req, res) => {
   console.log(req.params.id);
