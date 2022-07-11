@@ -5,31 +5,54 @@ import { Item } from "../types/item-types";
 export const itemRouter = express.Router();
 
 itemRouter.get("/", (req, res) => {
-  const queryParam = req.query;
-  if (queryParam.hasOwnProperty("maxPrice")) {
-    const queryItems = items.filter(
-      (item) => item.price <= Number(queryParam.maxPrice)
+  if (req.query.maxPrice && req.query.prefix && req.query.pageSize) {
+    const priceFilteredItems = items.filter(
+      (item) => item.price <= Number(req.query.maxPrice)
     );
-    res.json(queryItems);
-  } else if (queryParam.hasOwnProperty("prefix")) {
-    const prefix: string = String(queryParam.prefix);
+
+    const pageSize = Number(req.query.pageSize);
+    const pageSizeItems: Item[] = [];
+    for (let i = 0; i < pageSize; i++) {
+      pageSizeItems.push(priceFilteredItems[i]);
+    }
+
+    const prefix: string = String(req.query.prefix);
+    const tripleFilteredItems = pageSizeItems.filter((item) =>
+      item.product.startsWith(prefix)
+    );
+    console.log("triple filtered");
+
+    return res.status(200).json(tripleFilteredItems);
+  }
+
+  if (req.query.maxPrice) {
+    const queryItems = items.filter(
+      (item) => item.price <= Number(req.query.maxPrice)
+    );
+    return res.json(queryItems);
+  } else if (req.query.prefix) {
+    const prefix: string = String(req.query.prefix);
     const queryItems = items.filter((item) => item.product.startsWith(prefix));
-    res.status(200).json(queryItems);
-  } else if (queryParam.hasOwnProperty("pageSize")) {
-    const pageSize = Number(queryParam.pageSize);
+    return res.status(200).json(queryItems);
+  } else if (req.query.pageSize) {
+    const pageSize = Number(req.query.pageSize);
     const queryItems: Item[] = [];
     for (let i = 0; i < pageSize; i++) {
       queryItems.push(items[i]);
     }
-    res.status(200).json(queryItems);
-  } else {
-    res.status(200).json(items);
+    return res.status(200).json(queryItems);
   }
+
+  return res.status(200).json(items);
 });
 
 itemRouter.get("/:id", (req, res) => {
   console.log(req.params.id);
   const item = items.find((item) => item.id === Number(req.params.id));
+
+  if (!item) {
+    return res.status(404).json({ eror: "ID not found" });
+  }
 
   res.status(200).json(item);
 });
